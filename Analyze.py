@@ -1,7 +1,7 @@
 import tkinter
 import tkinter.constants
 import tkinter.filedialog
-import System
+import Analysis
 
 
 class TkFileDialogExample(tkinter.Frame):
@@ -17,8 +17,8 @@ class TkFileDialogExample(tkinter.Frame):
 
     def askopenfile(self):
         filename = tkinter.filedialog.askopenfilename(**self.file_opt)
-        System.path = str(filename)
-        System.main()
+        Analysis.path = str(filename)
+        Analysis.main()
         exit(0)
 
 

@@ -4,6 +4,7 @@ import math
 import System
 import Preprocess
 import tkinter
+import random
 
 global knnvalue
 kNearest = cv2.ml.KNearest_create()
@@ -162,24 +163,65 @@ def Recognize(imgThresh, ListMatchingChars):
         x, Results, y, z = kNearest.findNearest(ROIResized, int(knnvalue))
         strCurrentChar = str(chr(int(Results[0][0])))
         strChars = strChars + strCurrentChar
+    cv2.imshow("10", imgThreshColor)
     return strChars
 
 
 def Detect(ListPossiblePlates):
+    contours = []
+    intPlateCount = 0
     if len(ListPossiblePlates) == 0:
         return ListPossiblePlates
     for possiblePlate in ListPossiblePlates:
         possiblePlate.imgGrayscale, possiblePlate.imgThresh = Preprocess.Process(possiblePlate.imgPlate)
+        cv2.imshow("5a", possiblePlate.imgPlate)
+        cv2.imshow("5b", possiblePlate.imgGrayscale)
+        cv2.imshow("5c", possiblePlate.imgThresh)
         possiblePlate.imgThresh = cv2.resize(possiblePlate.imgThresh, (0, 0), fx=1.6, fy=1.6)
         thresholdValue, possiblePlate.imgThresh = cv2.threshold(possiblePlate.imgThresh, 0.0, 255.0,
                                                                 cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+        cv2.imshow("5d", possiblePlate.imgThresh)
         ListofList_MatchingCharacters = MatchList(Search(possiblePlate.imgThresh))
+        height, width, numChannels = possiblePlate.imgPlate.shape
+        imgContours = np.zeros((height, width, 3), np.uint8)
+        del contours[:]
+        for possibleChar in Search(possiblePlate.imgThresh):
+            contours.append(possibleChar.contour)
+        cv2.drawContours(imgContours, contours, -1, System.WHITE)
+        cv2.imshow("6", imgContours)
+        imgContours = np.zeros((height, width, 3), np.uint8)
+        del contours[:]
+        for ListMatchingChars in ListofList_MatchingCharacters:
+            intRandomBlue = random.randint(0, 255)
+            intRandomGreen = random.randint(0, 255)
+            intRandomRed = random.randint(0, 255)
+            for matchingChar in ListMatchingChars:
+                contours.append(matchingChar.contour)
+            cv2.drawContours(imgContours, contours, -1, (intRandomBlue, intRandomGreen, intRandomRed))
+        cv2.imshow("7", imgContours)
         if (len(ListofList_MatchingCharacters) == 0):
+            tkinter.messagebox.showinfo("", "Characters found in plate number " + str(
+                intPlateCount) + " = (none)")
+            intPlateCount = intPlateCount + 1
+            cv2.destroyWindow("8")
+            cv2.destroyWindow("9")
+            cv2.destroyWindow("10")
+            cv2.waitKey(0)
             possiblePlate.strChars = ""
             continue
         for i in range(0, len(ListofList_MatchingCharacters)):
             ListofList_MatchingCharacters[i].sort(key=lambda matchingChar: matchingChar.intCenterX)
             ListofList_MatchingCharacters[i] = Overlap(ListofList_MatchingCharacters[i])
+        imgContours = np.zeros((height, width, 3), np.uint8)
+        for ListOfMatchingChars in ListofList_MatchingCharacters:
+            intRandomBlue = random.randint(0, 255)
+            intRandomGreen = random.randint(0, 255)
+            intRandomRed = random.randint(0, 255)
+            del contours[:]
+            for matchingChar in ListOfMatchingChars:
+                contours.append(matchingChar.contour)
+            cv2.drawContours(imgContours, contours, -1, (intRandomBlue, intRandomGreen, intRandomRed))
+        cv2.imshow("8", imgContours)
         intLenOfLongestListChars = 0
         intIndex = 0
         for i in range(0, len(ListofList_MatchingCharacters)):
@@ -187,5 +229,15 @@ def Detect(ListPossiblePlates):
                 intLenOfLongestListChars = len(ListofList_MatchingCharacters[i])
                 intIndex = i
         longestListMatchingCharsInPlate = ListofList_MatchingCharacters[intIndex]
+        imgContours = np.zeros((height, width, 3), np.uint8)
+        del contours[:]
+        for matchingChar in longestListMatchingCharsInPlate:
+            contours.append(matchingChar.contour)
+        cv2.drawContours(imgContours, contours, -1, System.WHITE)
+        cv2.imshow("9", imgContours)
         possiblePlate.strChars = Recognize(possiblePlate.imgThresh, longestListMatchingCharsInPlate)
+        tkinter.messagebox.showinfo("", "Characters found in plate number " + str(
+            intPlateCount) + " = " + possiblePlate.strChars)
+        intPlateCount = intPlateCount + 1
+        cv2.waitKey(0)
     return ListPossiblePlates

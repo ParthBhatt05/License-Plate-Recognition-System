@@ -2,6 +2,10 @@ import cv2
 import math
 import Preprocess
 import Chars
+import numpy as np
+import random
+import System
+import tkinter
 
 WIDTH_PADDING = 1.3
 HEIGHT_PADDING = 1.5
@@ -38,10 +42,14 @@ def findPossibleCharsInScene(imgThresh):
     imgThreshCopy = imgThresh.copy()
     imgContours, contours, npaHierarchy = cv2.findContours(imgThreshCopy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     for i in range(0, len(contours)):
-        pc = PossibleChar(contours[i])
-        if Chars.Check(pc):
-            intCount = intCount + 1
-            ListPossibleChars.append(pc)
+        cv2.drawContours(imgContours, contours, i, System.WHITE)
+    pc = PossibleChar(contours[i])
+    if Chars.Check(pc):
+        intCount = intCount + 1
+        ListPossibleChars.append(pc)
+    tkinter.messagebox.showinfo("", "step 2 - len(contours) = " + str(
+        len(contours) + "\n step 2 - intCountOfPossibleChars = " + str(intCount)))
+    cv2.imshow("2a", imgContours)
     return ListPossibleChars
 
 
@@ -75,12 +83,47 @@ def Extract_Plate(imgOriginal, ListMatchingChars):
 
 def Detect(imgOriginalScene):
     ListPossiblePlates = []
+    height, width, numChannels = imgOriginalScene.shape
     cv2.destroyAllWindows()
+    cv2.imshow("0", imgOriginalScene)
     imgGrayscaleScene, imgThreshScene = Preprocess.Process(imgOriginalScene)
+    cv2.imshow("1a", imgGrayscaleScene)
+    cv2.imshow("1b", imgThreshScene)
     ListPossibleCharsInScene = findPossibleCharsInScene(imgThreshScene)
+    tkinter.messagebox.showinfo("", "step 2 - length of List Of Possible Chars In Scene) = " + str(
+        len(ListPossibleCharsInScene)))
+    imgContours = np.zeros((height, width, 3), np.uint8)
+    contours = []
+    for possibleChar in ListPossibleCharsInScene:
+        contours.append(possibleChar.contour)
+    cv2.drawContours(imgContours, contours, -1, System.WHITE)
+    cv2.imshow("2b", imgContours)
     ListofList_MatchingCharsInScene = Chars.MatchList(ListPossibleCharsInScene)
+    tkinter.messagebox.showinfo("", "step 3 - Count Of List Of Lists Of Matching Chars In Scene = " + str(
+        len(ListofList_MatchingCharsInScene)))
+    imgContours = np.zeros((height, width, 3), np.uint8)
+    for ListOfMatchingChars in ListofList_MatchingCharsInScene:
+        intRandomBlue = random.randint(0, 255)
+        intRandomGreen = random.randint(0, 255)
+        intRandomRed = random.randint(0, 255)
+        contours = []
+        for matchingChar in ListOfMatchingChars:
+            contours.append(matchingChar.contour)
+        cv2.drawContours(imgContours, contours, -1, (intRandomBlue, intRandomGreen, intRandomRed))
+    cv2.imshow("3", imgContours)
     for ListMatchingChars in ListofList_MatchingCharsInScene:
         possiblePlate = Extract_Plate(imgOriginalScene, ListMatchingChars)
         if possiblePlate.imgPlate is not None:
             ListPossiblePlates.append(possiblePlate)
+    cv2.imshow("4a", imgContours)
+    for i in range(0, len(ListPossiblePlates)):
+        p2fRectPoints = cv2.boxPoints(ListPossiblePlates[i].rrLocationOfPlateInScene)
+        cv2.line(imgContours, tuple(p2fRectPoints[0]), tuple(p2fRectPoints[1]), System.RED, 1)
+        cv2.line(imgContours, tuple(p2fRectPoints[1]), tuple(p2fRectPoints[2]), System.RED, 1)
+        cv2.line(imgContours, tuple(p2fRectPoints[2]), tuple(p2fRectPoints[3]), System.RED, 1)
+        cv2.line(imgContours, tuple(p2fRectPoints[3]), tuple(p2fRectPoints[0]), System.RED, 1)
+        cv2.imshow("4a", imgContours)
+        tkinter.messagebox.showinfo("", "possible plate " + str(i))
+        cv2.imshow("4b", ListPossiblePlates[i].imgPlate)
+        cv2.waitKey(0)
     return ListPossiblePlates
