@@ -99,7 +99,7 @@ def Train_Data(train):
                                                (RESIZED_IMAGE_WIDTH, RESIZED_IMAGE_HEIGHT)).reshape(
                     (1, RESIZED_IMAGE_WIDTH * RESIZED_IMAGE_HEIGHT))
                 npaFlattenedImages = np.append(npaFlattenedImages, npaFlattenedImage, 0)
-    fltClassifications = np.List(intClassifications, np.float32)
+    fltClassifications = np.array(intClassifications, np.float32)
     npaClassifications = fltClassifications.reshape((fltClassifications.size, 1))
     np.savetxt(f2, npaClassifications)
     np.savetxt(f1, npaFlattenedImages)

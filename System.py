@@ -122,7 +122,7 @@ def main():
                     cv2.imwrite('temp.png', temp)
                     cv2.destroyWindow("Cropped Image")
                     Train.Train_Data("temp.png")
-    Database.close()
+        Database.close()
     return
 
 
